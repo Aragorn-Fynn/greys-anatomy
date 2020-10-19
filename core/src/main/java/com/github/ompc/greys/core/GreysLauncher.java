@@ -29,10 +29,10 @@ public class GreysLauncher {
 
     public GreysLauncher(String[] args) throws Exception {
 
-        // 解析配置文件
+        // 1. 解析配置文件： 解析启动参数， 获取pid，ip:port， agent和core的jar包路径
         Configure configure = analyzeConfigure(args);
 
-        // 加载agent
+        // 2. 加载agent： 根据前面解析出来的参数加载agent
         attachAgent(configure);
 
     }
@@ -74,6 +74,10 @@ public class GreysLauncher {
         final Class<?> vmClass = loader.loadClass("com.sun.tools.attach.VirtualMachine");
 
         Object attachVmdObj = null;
+        /**
+         * 2.1 获取VirtualMachineDescriptor实例列表
+         * 2.2 如果列表中的实例的id等于configure中的id， 则将该VirtualMachineDescriptor设置为目标attach进程
+         */
         for (Object obj : (List<?>) vmClass.getMethod("list", (Class<?>[]) null).invoke(null, (Object[]) null)) {
             if ((vmdClass.getMethod("id", (Class<?>[]) null).invoke(obj, (Object[]) null))
                     .equals(Integer.toString(configure.getJavaPid()))) {
@@ -87,11 +91,14 @@ public class GreysLauncher {
 
         Object vmObj = null;
         try {
+            // 2.3 attach到目标进程， 远程连接到该jvm上
             if (null == attachVmdObj) { // 使用 attach(String pid) 这种方式
                 vmObj = vmClass.getMethod("attach", String.class).invoke(null, "" + configure.getJavaPid());
             } else {
                 vmObj = vmClass.getMethod("attach", vmdClass).invoke(null, attachVmdObj);
             }
+            // 2.4 加载GreysAgent， 向jvm注册一个代理程序agent， 在该agent的代理程序中会得到一个Instrumentation实例，
+            //     该实例可以 在class加载前改变class的字节码，也可以在class加载后重新加载。
             vmClass.getMethod("loadAgent", String.class, String.class).invoke(vmObj, configure.getGreysAgent(), configure.getGreysCore() + ";" + configure.toString());
         } finally {
             if (null != vmObj) {
