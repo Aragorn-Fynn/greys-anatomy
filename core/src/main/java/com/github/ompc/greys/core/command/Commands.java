@@ -31,6 +31,7 @@ public class Commands {
                 continue;
             }
 
+            // 注册所有的Command
             if (clazz.isAnnotationPresent(Cmd.class)) {
                 final Cmd cmd = clazz.getAnnotation(Cmd.class);
                 commands.put(cmd.name(), clazz);

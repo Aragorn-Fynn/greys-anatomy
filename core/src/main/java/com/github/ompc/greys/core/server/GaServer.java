@@ -176,7 +176,7 @@ public class GaServer {
     private Selector selector = null;
 
     /**
-     * 启动Greys服务端
+     * 4. 启动Greys服务端
      *
      * @param configure 配置信息
      * @throws IOException 服务器启动失败
@@ -187,21 +187,24 @@ public class GaServer {
         }
 
         try {
-
+            // 4.1 打开serversocket
             serverSocketChannel = ServerSocketChannel.open();
             selector = Selector.open();
 
+            // 4.2 注册Accept事件
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.socket().setSoTimeout(configure.getConnectTimeout());
             serverSocketChannel.socket().setReuseAddress(true);
             serverSocketChannel.register(selector, OP_ACCEPT);
 
             // 服务器挂载端口
+            // 4.3 将serversocket绑定到ip:port上
             serverSocketChannel.socket().bind(getInetSocketAddress(configure.getTargetIp(), configure.getTargetPort()), 24);
             logger.info("ga-server listening on network={};port={};timeout={};", configure.getTargetIp(),
                     configure.getTargetPort(),
                     configure.getConnectTimeout());
 
+            // 4.4 处理Accept事件和Read事件
             activeSelectorDaemon(selector, configure);
 
         } catch (IOException e) {
@@ -252,6 +255,7 @@ public class GaServer {
 
                                 // do sc read
                                 if (key.isValid() && key.isReadable()) {
+                                    // 5. 处理输入命令
                                     doRead(byteBuffer, key);
                                 }
 
@@ -324,6 +328,7 @@ public class GaServer {
             byteBuffer.flip();
             while (byteBuffer.hasRemaining()) {
                 switch (attachment.getLineDecodeState()) {
+                    // 5.1 读取命令
                     case READ_CHAR: {
                         final byte data = byteBuffer.get();
 
@@ -348,6 +353,7 @@ public class GaServer {
 
                     }
 
+                    // 5.2 命令读取完成， 开始处理命令
                     case READ_EOL: {
                         final String line = attachment.clearAndGetLine(session.getCharset());
 
@@ -359,7 +365,7 @@ public class GaServer {
                                 if (session.tryLock()) {
                                     try {
 
-                                        // 命令执行
+                                        // 6. 命令执行
                                         commandHandler.executeCommand(line, session);
 
                                         // 命令结束之后需要传输EOT告诉client命令传输已经完结，可以展示提示符

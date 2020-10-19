@@ -83,7 +83,9 @@ public class DefaultCommandHandler implements CommandHandler {
         }
 
         try {
+            // 6.1 根据输入命令， 构建一个命令Command对象
             final Command command = Commands.getInstance().newCommand(line);
+            // 6.2 执行Command
             execute(session, command);
 
             // 退出命令，需要关闭会话
