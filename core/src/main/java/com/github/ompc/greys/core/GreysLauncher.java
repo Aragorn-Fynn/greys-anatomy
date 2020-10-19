@@ -102,6 +102,13 @@ public class GreysLauncher {
     }
 
 
+    /**
+     * 处理流程：
+     * 1. 解析参数， 获取pid， 将GreysAgent attach到对应的jvm进程.
+     * 2. 解析命令行输入命令，根据命令创建相应的 ClassFileTransformer.
+     * 3. 通过ClassFileTransformer输出jvm， class或者其他信息。
+     * @param args
+     */
     public static void main(String[] args) {
         try {
             new GreysLauncher(args);
