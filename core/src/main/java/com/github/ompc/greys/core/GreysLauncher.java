@@ -99,6 +99,7 @@ public class GreysLauncher {
             }
             // 2.4 加载GreysAgent， 向jvm注册一个代理程序agent， 在该agent的代理程序中会得到一个Instrumentation实例，
             //     该实例可以 在class加载前改变class的字节码，也可以在class加载后重新加载。
+            // 将GreysCore, configure作为参数传递给后端。
             vmClass.getMethod("loadAgent", String.class, String.class).invoke(vmObj, configure.getGreysAgent(), configure.getGreysCore() + ";" + configure.toString());
         } finally {
             if (null != vmObj) {

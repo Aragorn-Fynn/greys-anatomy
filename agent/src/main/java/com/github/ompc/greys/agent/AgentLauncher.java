@@ -10,6 +10,7 @@ import java.util.jar.JarFile;
 public class AgentLauncher {
 
     // 全局持有classloader用于隔离greys实现
+    // TODO 为什么要重新定义classloader
     private static volatile ClassLoader greysClassLoader;
 
     public static void premain(String args, Instrumentation inst) {
@@ -88,6 +89,11 @@ public class AgentLauncher {
         return greysClassLoader = classLoader;
     }
 
+    /**
+     * 3. 初始化GaServer， 并调用bind方法
+     * @param args
+     * @param inst
+     */
     private static synchronized void main(final String args, final Instrumentation inst) {
         try {
 
