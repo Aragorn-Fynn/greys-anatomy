@@ -226,6 +226,7 @@ public class DefaultCommandHandler implements CommandHandler {
                 final Command.GetEnhancer getEnhancer = ((GetEnhancerAction) action).action(session, inst, printer);
                 final int lock = session.getLock();
                 final AdviceListener listener = getEnhancer.getAdviceListener();
+                // 7. 增强字节码
                 final EnhancerAffect enhancerAffect = Enhancer.enhance(
                         inst,
                         lock,

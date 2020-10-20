@@ -177,14 +177,14 @@ public class Enhancer implements ClassFileTransformer {
             final ProtectionDomain protectionDomain,
             final byte[] classfileBuffer) throws IllegalClassFormatException {
 
-        // 过滤掉不在增强集合范围内的类
+        // 7.4.1 过滤掉不在增强集合范围内的类
         if (!enhanceMap.containsKey(classBeingRedefined)) {
             return null;
         }
 
         final ClassReader cr;
 
-        // 首先先检查是否在缓存中存在Class字节码
+        // 7.4.2 首先先检查是否在缓存中存在Class字节码
         // 因为要支持多人协作,存在多人同时增强的情况
         final byte[] byteOfClassInCache = classBytesCache.get(classBeingRedefined);
         if (null != byteOfClassInCache) {
@@ -196,7 +196,7 @@ public class Enhancer implements ClassFileTransformer {
             cr = new ClassReader(classfileBuffer);
         }
 
-        // 获取这个类所对应的asm方法匹配
+        // 7.4.3 获取这个类所对应的asm方法匹配
         final Matcher<AsmMethod> asmMethodMatcher = enhanceMap.get(classBeingRedefined);
 
         // 字节码增强
@@ -240,7 +240,7 @@ public class Enhancer implements ClassFileTransformer {
 
         try {
 
-            // 生成增强字节码
+            // 7.4.4 生成增强字节码
             cr.accept(new AdviceWeaver(adviceId, isTracing, cr.getClassName(), asmMethodMatcher, affect, cw), EXPAND_FRAMES);
             final byte[] enhanceClassByteArray = cw.toByteArray();
 
@@ -404,19 +404,24 @@ public class Enhancer implements ClassFileTransformer {
         final EnhancerAffect affect = new EnhancerAffect();
 
 
+        // 7.1 获取被增强类的集合
         final Map<Class<?>, Matcher<AsmMethod>> enhanceMap = toEnhanceMap(pointCut);
 
-        // 构建增强器
+        // 7.2 构建增强器
         final Enhancer enhancer = new Enhancer(adviceId, isTracing, enhanceMap, affect);
         try {
+            // 7.3 注册增强器, 之后的所有的类加载都会被Transformer拦截。
             inst.addTransformer(enhancer, true);
 
-            // 批量增强
+            // 7.4 批量增强
             if (GlobalOptions.isBatchReTransform) {
                 final int size = enhanceMap.size();
                 final Class<?>[] classArray = new Class<?>[size];
                 arraycopy(enhanceMap.keySet().toArray(), 0, classArray, 0, size);
                 if (classArray.length > 0) {
+                    // retransformClasses：对于已经加载的类重新进行转换处理，即会触发重新加载类定义，
+                    // 需要注意的是，新加载的类不能修改旧有的类声明，譬如不能增加属性、不能修改方法声明
+                    // 使用的就是上面注册的Transformer。
                     inst.retransformClasses(classArray);
                 }
             }
@@ -442,6 +447,7 @@ public class Enhancer implements ClassFileTransformer {
 
 
         } finally {
+            // 7.5 上面已经对相关类增强过了， 所以将增强器删除。
             inst.removeTransformer(enhancer);
         }
 
